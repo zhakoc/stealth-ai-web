@@ -1,10 +1,14 @@
 import os, json, sqlite3, secrets, datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from datetime import timedelta
 import bcrypt
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+app.config["SESSION_COOKIE_NAME"] = "stealth_ai_session"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+app.config["SESSION_COOKIE_EXPIRES"] = timedelta(days=30)
 
 DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "users.db")
 CONFIG = os.environ.get("CONFIG_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json"))
@@ -88,7 +92,9 @@ def login():
         u = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
         if u and bcrypt.checkpw(password, u["password"]):
             user = User(u["id"], u["username"], u["email"], u["full_name"], u["is_admin"])
-            login_user(user, remember=True)
+            remember = request.form.get("remember") == "on"
+            session.permanent = remember
+            login_user(user, remember=remember)
             ip = get_real_ip()
             conn.execute("UPDATE users SET last_login=?, ip_address=? WHERE id=?", (datetime.datetime.now(), ip, u["id"]))
             conn.execute("INSERT INTO activity_log (user_id, action, ip_address) VALUES (?, 'login', ?)", (u["id"], ip))
