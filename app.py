@@ -13,6 +13,14 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+@app.errorhandler(500)
+def internal_error(e):
+    return render_template("login.html", error="Sunucu hatasi, tekrar deneyin."), 500
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("login.html", error="Sayfa bulunamadi."), 404
+
 def get_db():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
@@ -104,7 +112,12 @@ def register():
         try:
             conn.execute("INSERT INTO users (username, email, password, full_name, ip_address, terms_accepted) VALUES (?,?,?,?,?,1)",
                         (username, email, hashed, full_name, ip))
-            conn.commit(); conn.close()
+            conn.commit()
+            count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            if count == 1:
+                conn.execute("UPDATE users SET is_admin=1 WHERE username=?", (username,))
+                conn.commit()
+            conn.close()
             return redirect(url_for("login"))
         except sqlite3.IntegrityError:
             conn.close()
@@ -124,6 +137,8 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
+    if not current_user.is_admin:
+        return redirect(url_for("chat"))
     conn = get_db()
     users = conn.execute("SELECT id, username, email, full_name, ip_address, is_admin, created_at, last_login, terms_accepted FROM users ORDER BY last_login DESC").fetchall()
     logs = conn.execute("SELECT a.*, u.username FROM activity_log a LEFT JOIN users u ON a.user_id=u.id ORDER BY a.timestamp DESC LIMIT 20").fetchall()
