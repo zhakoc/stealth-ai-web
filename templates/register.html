@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stealtH AI - Kayit Ol</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1>
+                <p class="subtitle">Yeni hesap olusturun</p>
+            </div>
+            {% if error %}
+            <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
+            <form method="POST" class="auth-form">
+                <div class="input-group">
+                    <label>KULLANICI ADI</label>
+                    <input type="text" name="username" placeholder="Kullanici adi secin" required autofocus>
+                </div>
+                <div class="input-group">
+                    <label>E-POSTA</label>
+                    <input type="email" name="email" placeholder="E-posta adresiniz" required>
+                </div>
+                <div class="input-group">
+                    <label>AD SOYAD</label>
+                    <input type="text" name="full_name" placeholder="Adiniz soyadiniz">
+                </div>
+                <div class="input-group">
+                    <label>SIFRE</label>
+                    <input type="password" name="password" placeholder="Sifre olusturun (min 6 karakter)" required minlength="6">
+                </div>
+                <div class="input-group">
+                    <label>SIFRE TEKRAR</label>
+                    <input type="password" name="password2" placeholder="Sifrenizi tekrar girin" required minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary">KAYIT OL</button>
+            </form>
+            <div class="auth-footer">
+                Zaten hesabiniz var mi? <a href="{{ url_for('login') }}">Giris Yap</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

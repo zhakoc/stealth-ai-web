@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stealtH AI - Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('chat') }}" class="active">AI Chat</a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('settings') }}">Ayarlar</a>
+            {% endif %}
+            <div class="nav-user">
+                <span class="user-badge">{{ current_user.username }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Cikis</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="chat-page">
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    <div class="msg-avatar">AI</div>
+                    <div class="msg-content">
+                        <div class="msg-text">Merhaba! Ben stealtH AI asistaniyim. Size nasil yardimci olabilirim? &#128522;</div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea id="msgInput" placeholder="Mesajinizi yazin..." rows="1"></textarea>
+                    <button id="sendBtn" class="send-btn" onclick="sendMessage()">
+                        <span>Gonder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const msgInput = document.getElementById('msgInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        msgInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+        msgInput.addEventListener('input', () => {
+            msgInput.style.height = 'auto';
+            msgInput.style.height = Math.min(msgInput.scrollHeight, 120) + 'px';
+        });
+
+        function addMessage(text, isUser) {
+            const div = document.createElement('div');
+            div.className = 'message ' + (isUser ? 'user-message' : 'ai-message');
+            const avatar = isUser ? '{{ current_user.username[0]|upper }}' : 'AI';
+            div.innerHTML = `<div class="msg-avatar">${avatar}</div><div class="msg-content"><div class="msg-text">${text}</div></div>`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return div;
+        }
+
+        function typeMessage(text, element) {
+            const msgText = element.querySelector('.msg-text');
+            msgText.textContent = '';
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < text.length) { msgText.textContent += text[i]; i++; }
+                else { clearInterval(interval); }
+            }, 15);
+        }
+
+        async function sendMessage() {
+            const msg = msgInput.value.trim();
+            if (!msg) return;
+            msgInput.value = '';
+            msgInput.style.height = 'auto';
+            addMessage(msg, true);
+            const aiMsg = addMessage('Dusunuyorum...', false);
+            sendBtn.disabled = true;
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: msg})
+                });
+                const data = await res.json();
+                if (data.reply) { typeMessage(data.reply, aiMsg); }
+                else { aiMsg.querySelector('.msg-text').textContent = 'Hata: ' + (data.error || 'Bilinmeyen hata'); }
+            } catch(e) {
+                aiMsg.querySelector('.msg-text').textContent = 'Baglanti hatasi!';
+            }
+            sendBtn.disabled = false;
+            msgInput.focus();
+        }
+    </script>
+</body>
+</html>

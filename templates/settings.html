@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stealtH AI - Ayarlar</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('chat') }}">AI Chat</a>
+            <a href="{{ url_for('settings') }}" class="active">Ayarlar</a>
+            <div class="nav-user">
+                <span class="user-badge">{{ current_user.username }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Cikis</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="settings-page">
+        <div class="settings-container">
+            <h2>API Ayarlari</h2>
+            {% if success %}
+            <div class="alert alert-success">{{ success }}</div>
+            {% endif %}
+            <form method="POST" class="settings-form">
+                <div class="form-group">
+                    <label>GOOGLE API KEY</label>
+                    <input type="password" name="api_key" value="{{ config.get('api_key', '') }}" placeholder="Google Gemini API key">
+                </div>
+                <div class="form-group">
+                    <label>OPENROUTER KEY</label>
+                    <input type="password" name="or_key" value="{{ config.get('or_key', '') }}" placeholder="OpenRouter API key (opsiyonel)">
+                </div>
+                <div class="form-group">
+                    <label>MODEL</label>
+                    <input type="text" name="model" value="{{ config.get('model', 'gemini-3.6-flash') }}" placeholder="gemini-3.6-flash">
+                </div>
+                <div class="form-group">
+                    <label>WORKSPACE</label>
+                    <input type="text" name="workspace" value="{{ config.get('workspace', '') }}" placeholder="Varsayilan calisma klasoru">
+                </div>
+                <button type="submit" class="btn btn-primary">KAYDET</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
