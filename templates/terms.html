@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stealtH AI - Kullanim Kosullari</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand"><h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1></div>
+        <div class="nav-links">
+            <a href="{{ url_for('login') }}">&#8592; Geri Don</a>
+        </div>
+    </nav>
+    <main class="settings-page">
+        <div class="settings-container" style="max-width:800px">
+            <h2>Kullanim Kosullari</h2>
+            <div style="color:var(--dim); font-size:14px; line-height:1.8; margin-top:16px">
+                <p><strong>1. Hizmetin Kabulu</strong></p>
+                <p>stealtH AI platformunu kullanarak bu kosullari kabul etmis olursunuz.</p>
+
+                <p><strong>2. Kullanici Sorumluluklari</strong></p>
+                <ul style="margin:8px 0 16px 20px">
+                    <li>Hesap bilgilerinizin gizliliginden siz sorumlusunuz</li>
+                    <li>Platformu yasadisi amaclarla kullanmayacaginizi taahhut edersiniz</li>
+                    <li>AI asistani tarafindan uretilen iceriklerin sorumlulugu size aittir</li>
+                </ul>
+
+                <p><strong>3. Fikri Mulkiyet</strong></p>
+                <p>Platform uzerinde uretilen kod, metin ve diger iceriklerin fikri mulkiyet haklari kullaniciya aittir.</p>
+
+                <p><strong>4. Sinirlamalar</strong></p>
+                <ul style="margin:8px 0 16px 20px">
+                    <li>API orani sinirlari uygulanabilir</li>
+                    <li>Ucretsiz plan belli basli ozelliklerle sinirlidir</li>
+                    <li>Kotu niyetli kullanima izin verilmez</li>
+                </ul>
+
+                <p><strong>5. Sorumluluk Reddi</strong></p>
+                <p>stealtH AI "oldugu gibi" sunulur. Hizmet kesintileri veya veri kaybindan sorumlu tutulamaz.</p>
+
+                <p><strong>6. Degisiklikler</strong></p>
+                <p>Bu kosullar istedigimiz zaman guncellenebilir. Onemli degisiklikler e-posta ile bildirilir.</p>
+
+                <p style="margin-top:20px; color:var(--dim)">Son guncelleme: 9 Eylül 2026</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

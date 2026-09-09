@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stealtH AI - Gizlilik Politikasi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand"><h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1></div>
+        <div class="nav-links">
+            <a href="{{ url_for('login') }}">&#8592; Geri Don</a>
+        </div>
+    </nav>
+    <main class="settings-page">
+        <div class="settings-container" style="max-width:800px">
+            <h2>Gizlilik Politikasi</h2>
+            <div style="color:var(--dim); font-size:14px; line-height:1.8; margin-top:16px">
+                <p><strong>1. Toplanan Bilgiler</strong></p>
+                <p>stealtH AI platformunu kullandiginizda su bilgileri topluyoruz:</p>
+                <ul style="margin:8px 0 16px 20px">
+                    <li>Kullanici adi ve e-posta adresi</li>
+                    <li>IP adresi ve baglanti bilgileri</li>
+                    <li>Sohbet icerikleri ve komut loglari</li>
+                    <li>Platform kullanim verileri</li>
+                </ul>
+
+                <p><strong>2. Bilgilerin Kullanimi</strong></p>
+                <p>Toplanan bilgiler su amaclarla kullanilir:</p>
+                <ul style="margin:8px 0 16px 20px">
+                    <li>Hesap olusturma ve yonetimi</li>
+                    <li>Guvenlik ve yetkilendirme</li>
+                    <li>Hizmet kalitesinin iyilestirilmesi</li>
+                    <li>Yasal yukumluluklerin yerine getirilmesi</li>
+                </ul>
+
+                <p><strong>3. E-posta Kullanimi</strong></p>
+                <p>E-posta adresiniz yalnizca hesap dogrulama, sifre sifirlama ve onemli sistem bildirimleri icin kullanilir. Ucuncu taraflarla paylasilmaz.</p>
+
+                <p><strong>4. Veri Guvenligi</strong></p>
+                <p>Verileriniz SSL ile sifrelenir ve guvenli sunucularda saklanir. Yetkisiz erisime karsi katil onlemler alinmistir.</p>
+
+                <p><strong>5. Haklariniz</strong></p>
+                <ul style="margin:8px 0 16px 20px">
+                    <li>Verilerinizi goruntuleme hakkınız</li>
+                    <li>Hesabinizi silme hakkınız</li>
+                    <li>Veri tasinma hakkınız</li>
+                </ul>
+
+                <p><strong>6. Iletisim</strong></p>
+                <p>Gizlilik politikasi hakkindaki sorulariniz icin: stealth-ai@proton.me</p>
+
+                <p style="margin-top:20px; color:var(--dim)">Son guncelleme: 9 Eylül 2026</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

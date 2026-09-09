@@ -1,4 +1,4 @@
-import os, json, sqlite3, secrets
+import os, json, sqlite3, secrets, datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 import bcrypt
@@ -26,8 +26,18 @@ def init_db():
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         full_name TEXT DEFAULT '',
+        ip_address TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        is_admin INTEGER DEFAULT 0
+        last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        is_admin INTEGER DEFAULT 0,
+        terms_accepted INTEGER DEFAULT 0
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS activity_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        action TEXT,
+        ip_address TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )""")
     conn.commit()
     conn.close()
@@ -61,11 +71,15 @@ def login():
         password = request.form.get("password","").encode()
         conn = get_db()
         u = conn.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
-        conn.close()
         if u and bcrypt.checkpw(password, u["password"]):
             user = User(u["id"], u["username"], u["email"], u["full_name"], u["is_admin"])
             login_user(user, remember=True)
+            ip = request.remote_addr
+            conn.execute("UPDATE users SET last_login=?, ip_address=? WHERE id=?", (datetime.datetime.now(), ip, u["id"]))
+            conn.execute("INSERT INTO activity_log (user_id, action, ip_address) VALUES (?, 'login', ?)", (u["id"], ip))
+            conn.commit(); conn.close()
             return redirect(url_for("dashboard"))
+        conn.close()
         return render_template("login.html", error="Kullanici adi veya sifre hatali!")
     return render_template("login.html")
 
@@ -77,17 +91,20 @@ def register():
         full_name = request.form.get("full_name","").strip()
         password = request.form.get("password","").encode()
         password2 = request.form.get("password2","").encode()
+        terms = request.form.get("terms")
+        if not terms:
+            return render_template("register.html", error="Sozlesmeyi kabul etmelisiniz!")
         if password != password2:
             return render_template("register.html", error="Sifreler eslesmiyor!")
         if len(password) < 6:
             return render_template("register.html", error="Sifre en az 6 karakter olmali!")
         hashed = bcrypt.hashpw(password, bcrypt.gensalt())
+        ip = request.remote_addr
         conn = get_db()
         try:
-            conn.execute("INSERT INTO users (username, email, password, full_name) VALUES (?,?,?,?)",
-                        (username, email, hashed, full_name))
-            conn.commit()
-            conn.close()
+            conn.execute("INSERT INTO users (username, email, password, full_name, ip_address, terms_accepted) VALUES (?,?,?,?,?,1)",
+                        (username, email, hashed, full_name, ip))
+            conn.commit(); conn.close()
             return redirect(url_for("login"))
         except sqlite3.IntegrityError:
             conn.close()
@@ -97,13 +114,35 @@ def register():
 @app.route("/logout")
 @login_required
 def logout():
+    conn = get_db()
+    ip = request.remote_addr
+    conn.execute("INSERT INTO activity_log (user_id, action, ip_address) VALUES (?, 'logout', ?)", (current_user.id, ip))
+    conn.commit(); conn.close()
     logout_user()
     return redirect(url_for("login"))
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    conn = get_db()
+    users = conn.execute("SELECT id, username, email, full_name, ip_address, is_admin, created_at, last_login, terms_accepted FROM users ORDER BY last_login DESC").fetchall()
+    logs = conn.execute("SELECT a.*, u.username FROM activity_log a LEFT JOIN users u ON a.user_id=u.id ORDER BY a.timestamp DESC LIMIT 20").fetchall()
+    online = conn.execute("SELECT id, username, email, ip_address, last_login FROM users WHERE last_login > datetime('now', '-10 minutes')").fetchall()
+    conn.close()
+    return render_template("dashboard.html", users=users, logs=logs, online=online)
 
 @app.route("/chat")
 @login_required
 def chat():
     return render_template("chat.html")
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
 
 @app.route("/api/status")
 @login_required
@@ -111,15 +150,8 @@ def api_status():
     c = {}
     if os.path.exists(CONFIG):
         with open(CONFIG,"r") as f: c = json.load(f)
-    return jsonify({"model": c.get("model","bilinmiyor"), "api_ok": bool(c.get("api_key","").startswith("AQ"))})
-
-@app.route("/dashboard")
-@login_required
-def dashboard():
-    conn = get_db()
-    users = conn.execute("SELECT id, username, email, full_name, is_admin, created_at FROM users ORDER BY created_at DESC").fetchall()
-    conn.close()
-    return render_template("dashboard.html", users=users)
+    has_key = bool(c.get("or_key","").startswith("sk-or")) or bool(c.get("api_key","").startswith("AQ"))
+    return jsonify({"model": c.get("model","bilinmiyor"), "api_ok": has_key})
 
 @app.route("/api/chat", methods=["POST"])
 @login_required
@@ -130,16 +162,16 @@ def api_chat():
     c = {}
     if os.path.exists(CONFIG):
         with open(CONFIG, "r") as f: c = json.load(f)
-    import urllib.request, urllib.error
+    import urllib.request, urllib.error, time
     providers = []
+    ork = c.get("or_key","")
+    if ork:
+        providers.append({"name":"openrouter","key":ork,"model":"xiaomi/mimo-v2-flash:free",
+                         "url":"https://openrouter.ai/api/v1/chat/completions","type":"openai"})
     if c.get("api_key","").startswith("AQ"):
         providers.append({"name":"google","key":c["api_key"],"model":"gemini-3.6-flash",
                          "url":f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={c['api_key']}","type":"google"})
-    if c.get("or_key"):
-        providers.append({"name":"openrouter","key":c["or_key"],"model":"xiaomi/mimo-v2-flash:free",
-                         "url":"https://openrouter.ai/api/v1/chat/completions","type":"openai"})
-    sys_t = "Sen stealtH AI asistanisin. Turkce konus. Emoji kullanarak konus."
-    sys_t += "\nKonusurken kendi goruslerini de ekle. Yorum yap, analiz et."
+    sys_t = "Sen stealtH AI asistanisin. Turkce konus. Emoji kullanarak konus. Konusurken kendi goruslerini de ekle."
     cs = [{"role":"user","parts":[{"text":"[SYS]"+sys_t}]},
           {"role":"model","parts":[{"text":"Anladim!"}]},
           {"role":"user","parts":[{"text":msg}]}]
@@ -155,15 +187,15 @@ def api_chat():
                     messages = [{"role":"system","content":cs[0]["parts"][0]["text"]}]
                     for m in cs[2:]: messages.append({"role":m["role"],"content":m["parts"][0]["text"]})
                     body = json.dumps({"model":prov["model"],"messages":messages,"max_tokens":2000,"temperature":0.8}).encode()
-                    req = urllib.request.Request(prov["url"], data=body, headers={"Content-Type":"application/json","Authorization":f"Bearer {prov['key']}"})
+                    req = urllib.request.Request(prov["url"], data=body, headers={"Content-Type":"application/json","Authorization":f"Bearer {prov['key']}","HTTP-Referer":"https://stealth-ai.com","X-Title":"stealtH AI"})
                     resp = urllib.request.urlopen(req, timeout=60)
                     reply = json.loads(resp.read())["choices"][0]["message"]["content"]
                 return jsonify({"reply": reply, "provider": prov["name"]})
             except urllib.error.HTTPError as e:
-                if e.code in (503,429) and attempt < 2: import time; time.sleep(2); continue
+                if e.code in (503,429) and attempt < 2: time.sleep(3); continue
                 break
             except: break
-    return jsonify({"error": "API'ler calismadi"}), 500
+    return jsonify({"error": "API'ler calismadi. OpenRouter key gerekli."}), 500
 
 @app.route("/settings", methods=["GET","POST"])
 @login_required
@@ -176,7 +208,7 @@ def settings():
             with open(CONFIG,"r") as f: c = json.load(f)
         c["api_key"] = request.form.get("api_key","").strip()
         c["or_key"] = request.form.get("or_key","").strip()
-        c["model"] = request.form.get("model","gemini-3.6-flash").strip()
+        c["model"] = request.form.get("model","xiaomi/mimo-v2-flash:free").strip()
         c["workspace"] = request.form.get("workspace","").strip()
         with open(CONFIG,"w") as f: json.dump(c, f, indent=2, ensure_ascii=False)
         return render_template("settings.html", success="Ayarlar kaydedildi!", config=c)

@@ -8,9 +8,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="nav-brand">
-            <h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1>
-        </div>
+        <div class="nav-brand"><h1 class="logo"><span class="pink">stealt</span><span class="purple">H</span> <span class="dim">AI</span></h1></div>
         <div class="nav-links">
             <a href="{{ url_for('dashboard') }}" class="active">Dashboard</a>
             <a href="{{ url_for('chat') }}">AI Chat</a>
@@ -19,9 +17,7 @@
             {% endif %}
             <div class="nav-user">
                 <span class="user-badge">{{ current_user.username }}</span>
-                {% if current_user.is_admin %}
-                <span class="admin-badge">ADMIN</span>
-                {% endif %}
+                {% if current_user.is_admin %}<span class="admin-badge">ADMIN</span>{% endif %}
                 <a href="{{ url_for('logout') }}" class="btn-logout">Cikis</a>
             </div>
         </div>
@@ -30,9 +26,7 @@
     <main class="dashboard">
         <div class="dash-grid">
             <div class="dash-card profile-card">
-                <div class="card-header">
-                    <h2>Profil Bilgileri</h2>
-                </div>
+                <div class="card-header"><h2>Profil Bilgileri</h2></div>
                 <div class="card-body">
                     <div class="profile-avatar">{{ current_user.username[0]|upper }}</div>
                     <div class="profile-info">
@@ -45,52 +39,81 @@
             </div>
 
             <div class="dash-card stats-card">
-                <div class="card-header">
-                    <h2>Sistem Durumu</h2>
-                </div>
+                <div class="card-header"><h2>Sistem Durumu</h2></div>
                 <div class="card-body">
                     <div class="stat-item">
                         <div class="stat-icon green">&#10003;</div>
-                        <div class="stat-info">
-                            <div class="stat-label">AI Model</div>
-                            <div class="stat-value" id="ai-model">Yukleniyor...</div>
-                        </div>
+                        <div class="stat-info"><div class="stat-label">AI Model</div><div class="stat-value" id="ai-model">Yukleniyor...</div></div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-icon blue">&#9889;</div>
-                        <div class="stat-info">
-                            <div class="stat-label">API Durumu</div>
-                            <div class="stat-value" id="api-status">Kontrol ediliyor...</div>
-                        </div>
+                        <div class="stat-info"><div class="stat-label">API Durumu</div><div class="stat-value" id="api-status">Kontrol ediliyor...</div></div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-icon pink">&#9733;</div>
-                        <div class="stat-info">
-                            <div class="stat-label">Kayitli Kullanici</div>
-                            <div class="stat-value">{{ users|length }}</div>
-                        </div>
+                        <div class="stat-info"><div class="stat-label">Toplam Kullanici</div><div class="stat-value">{{ users|length }}</div></div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon green">&#9679;</div>
+                        <div class="stat-info"><div class="stat-label">Aktif Kullanici</div><div class="stat-value">{{ online|length }}</div></div>
                     </div>
                 </div>
             </div>
 
-            {% if current_user.is_admin %}
-            <div class="dash-card users-card">
-                <div class="card-header">
-                    <h2>Kullanicilar</h2>
+            {% if online|length > 0 %}
+            <div class="dash-card online-card">
+                <div class="card-header"><h2>&#9679; Su An Aktif</h2></div>
+                <div class="card-body">
+                    {% for u in online %}
+                    <div class="online-user">
+                        <div class="online-avatar">{{ u.username[0]|upper }}</div>
+                        <div class="online-info">
+                            <div class="online-name">{{ u.username }}</div>
+                            <div class="online-ip">IP: {{ u.ip_address or 'Bilinmiyor' }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
+            </div>
+            {% endif %}
+
+            <div class="dash-card users-card">
+                <div class="card-header"><h2>Kayitli Kullanicilar</h2></div>
                 <div class="card-body">
                     <table class="users-table">
                         <thead>
-                            <tr><th>#</th><th>Kullanici</th><th>E-posta</th><th>Yetki</th><th>Kayit Tarihi</th></tr>
+                            <tr><th>#</th><th>Kullanici</th><th>E-posta</th><th>IP Adresi</th><th>Yetki</th><th>Kayit</th><th>Son Giris</th></tr>
                         </thead>
                         <tbody>
                             {% for u in users %}
                             <tr>
                                 <td>{{ u.id }}</td>
-                                <td>{{ u.username }}</td>
+                                <td><strong>{{ u.username }}</strong>{% if u.full_name %}<br><small style="color:var(--dim)">{{ u.full_name }}</small>{% endif %}</td>
                                 <td>{{ u.email }}</td>
+                                <td><code style="color:var(--blu); font-size:11px">{{ u.ip_address or '-' }}</code></td>
                                 <td><span class="badge {{ 'admin' if u.is_admin else 'user' }}">{{ 'Admin' if u.is_admin else 'User' }}</span></td>
-                                <td>{{ u.created_at[:10] if u.created_at else '-' }}</td>
+                                <td><small>{{ u.created_at[:10] if u.created_at else '-' }}</small></td>
+                                <td><small>{{ u.last_login[:16] if u.last_login else '-' }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {% if logs %}
+            <div class="dash-card logs-card">
+                <div class="card-header"><h2>Son Aktiviteler</h2></div>
+                <div class="card-body">
+                    <table class="users-table">
+                        <thead><tr><th>Kullanici</th><th>Islem</th><th>IP</th><th>Zaman</th></tr></thead>
+                        <tbody>
+                            {% for l in logs %}
+                            <tr>
+                                <td>{{ l.username or '-' }}</td>
+                                <td><span class="badge {{ 'admin' if l.action=='login' else 'user' }}">{{ l.action }}</span></td>
+                                <td><code style="color:var(--blu); font-size:11px">{{ l.ip_address or '-' }}</code></td>
+                                <td><small>{{ l.timestamp[:16] if l.timestamp else '-' }}</small></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -100,18 +123,12 @@
             {% endif %}
 
             <div class="dash-card actions-card">
-                <div class="card-header">
-                    <h2>Hizli Erisim</h2>
-                </div>
+                <div class="card-header"><h2>Hizli Erisim</h2></div>
                 <div class="card-body">
-                    <a href="{{ url_for('chat') }}" class="action-btn">
-                        <span class="action-icon">&#128172;</span>
-                        <span>AI ile Sohbet Baslat</span>
-                    </a>
-                    <a href="{{ url_for('settings') }}" class="action-btn">
-                        <span class="action-icon">&#9881;</span>
-                        <span>API Ayarlari</span>
-                    </a>
+                    <a href="{{ url_for('chat') }}" class="action-btn"><span class="action-icon">&#128172;</span><span>AI ile Sohbet Baslat</span></a>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('settings') }}" class="action-btn"><span class="action-icon">&#9881;</span><span>API Ayarlari</span></a>
+                    {% endif %}
                 </div>
             </div>
         </div>
