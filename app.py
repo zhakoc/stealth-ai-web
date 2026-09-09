@@ -66,6 +66,13 @@ def load_user(user_id):
     if u: return User(u["id"], u["username"], u["email"], u["full_name"], u["is_admin"])
     return None
 
+def get_real_ip():
+    if request.headers.get('X-Forwarded-For'):
+        return request.headers['X-Forwarded-For'].split(',')[0].strip()
+    if request.headers.get('X-Real-IP'):
+        return request.headers['X-Real-IP']
+    return get_real_ip()
+
 @app.route("/")
 def index():
     if current_user.is_authenticated:
@@ -82,7 +89,7 @@ def login():
         if u and bcrypt.checkpw(password, u["password"]):
             user = User(u["id"], u["username"], u["email"], u["full_name"], u["is_admin"])
             login_user(user, remember=True)
-            ip = request.remote_addr
+            ip = get_real_ip()
             conn.execute("UPDATE users SET last_login=?, ip_address=? WHERE id=?", (datetime.datetime.now(), ip, u["id"]))
             conn.execute("INSERT INTO activity_log (user_id, action, ip_address) VALUES (?, 'login', ?)", (u["id"], ip))
             conn.commit(); conn.close()
@@ -107,7 +114,7 @@ def register():
         if len(password) < 6:
             return render_template("register.html", error="Sifre en az 6 karakter olmali!")
         hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-        ip = request.remote_addr
+        ip = get_real_ip()
         conn = get_db()
         try:
             conn.execute("INSERT INTO users (username, email, password, full_name, ip_address, terms_accepted) VALUES (?,?,?,?,?,1)",
@@ -128,7 +135,7 @@ def register():
 @login_required
 def logout():
     conn = get_db()
-    ip = request.remote_addr
+    ip = get_real_ip()
     conn.execute("INSERT INTO activity_log (user_id, action, ip_address) VALUES (?, 'logout', ?)", (current_user.id, ip))
     conn.commit(); conn.close()
     logout_user()

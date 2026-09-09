@@ -16,7 +16,7 @@
             {% if error %}
             <div class="alert alert-error">{{ error }}</div>
             {% endif %}
-            <form method="POST" class="auth-form">
+            <form method="POST" class="auth-form" id="registerForm">
                 <div class="input-group">
                     <label>KULLANICI ADI</label>
                     <input type="text" name="username" placeholder="Kullanici adi secin" required autofocus>
@@ -38,19 +38,34 @@
                     <input type="password" name="password2" placeholder="Sifrenizi tekrar girin" required minlength="6">
                 </div>
                 <div class="checkbox-group" style="display:flex; align-items:flex-start; gap:10px; margin:8px 0">
-                    <input type="checkbox" name="terms" id="terms" required style="margin-top:4px; accent-color:var(--pink)">
+                    <input type="checkbox" name="terms" id="terms" required style="margin-top:4px; accent-color:var(--pink)" onchange="toggleRegister()">
                     <label for="terms" style="font-size:12px; color:var(--dim); line-height:1.5">
                         <a href="{{ url_for('terms') }}" target="_blank" style="color:var(--pink)">Kullanim Kosullari</a>'ni ve
                         <a href="{{ url_for('privacy') }}" target="_blank" style="color:var(--pink)">Gizlilik Politikasi</a>'ni okudum, kabul ediyorum.
                         E-posta adresim sadece hesap dogrulama ve sistem bildirimleri icin kullanilacagini onayliyorum.
                     </label>
                 </div>
-                <button type="submit" class="btn btn-primary">KAYIT OL</button>
+                <button type="submit" class="btn btn-primary" id="registerBtn" disabled style="opacity:0.5; cursor:not-allowed">KAYIT OL</button>
             </form>
             <div class="auth-footer">
                 Zaten hesabiniz var mi? <a href="{{ url_for('login') }}">Giris Yap</a>
             </div>
         </div>
     </div>
+    <script>
+        function toggleRegister() {
+            var cb = document.getElementById('terms');
+            var btn = document.getElementById('registerBtn');
+            if (cb.checked) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+            }
+        }
+    </script>
 </body>
 </html>
